@@ -105,6 +105,21 @@ app.get('/movies/read/by-title', (req,res)=>{
     
 })
 
+app.get('/movies/read/id/:id', (req,res)=>{
+    const find = movies.find( movie => movie.title.toLocaleLowerCase() === req.params.id)
+    if (!find) {
+        res.send({
+            status:404,
+            error:true,
+            message:'the movie <ID> does not exist'
+        })} else{
+            res.send({
+            status:200,
+            data: req.params.id
+        })
+    }
+})
+
 app.get('/movies/update', (req,res)=>{
     res.send('update')
 })
