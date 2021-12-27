@@ -69,6 +69,42 @@ app.get('/movies/read', (req,res)=>{
     })
 })
 
+app.get('/movies/read/by-date', (req,res)=>{
+    res.send({
+        status:200,
+        data: movies.sort((a,b)=>{
+            return b.year - a.year
+        })
+    })
+})
+
+app.get('/movies/read/by-rating', (req,res)=>{
+    res.send({
+        status:200,
+        data: movies.sort((a,b)=>{
+            return b.rating - a.rating
+        })
+    })
+})
+
+app.get('/movies/read/by-title', (req,res)=>{
+    res.send({
+        status:200,
+        data: movies.sort((a, b) =>{
+            var nameA = a.title.toUpperCase();
+            var nameB = b.title.toUpperCase();
+            if (nameA < nameB) {
+              return -1;
+            }
+            if (nameA > nameB) {
+              return 1;
+            }
+            return 0;
+          })
+    })
+    
+})
+
 app.get('/movies/update', (req,res)=>{
     res.send('update')
 })
