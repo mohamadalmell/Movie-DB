@@ -23,6 +23,34 @@ app.get('/time', (req,res)=>{
     })
 })
 
+app.get('/hello', (req,res)=>{
+    res.send({
+        status:200,
+        message: `Hello`
+    })
+})
+
+app.get('/hello/:id', (req,res)=>{
+    res.send({
+        status:200,
+        message: `Hello ${req.params.id}`
+    })
+})
+
+app.get('/search', (req,res)=>{
+    if (!req.query.s) {
+        res.send({
+            status:500,
+            error:true,
+            message: 'You have to provide a search'
+        })
+    } else res.send({
+            status:200,
+            message: 'ok',
+            data: req.query.s
+    })
+})
+
 app.listen(port, () => {
     console.log(`Server started at http://localhost:${port}`)
   }) 
