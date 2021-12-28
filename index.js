@@ -125,16 +125,17 @@ app.get('/movies/read/by-title', (req,res)=>{
 })
 
 app.get('/movies/read/id/:id', (req,res)=>{
-    const find = movies.find( movie => movie.title.toLocaleLowerCase() === req.params.id)
+    let indx = parseInt(req.params.id);
+    const find = movies.find( i => movies.indexOf(i) === indx)
     if (!find) {
         res.send({
             status:404,
             error:true,
-            message:'the movie <ID> does not exist'
+            message:`the movie ${indx} does not exist`
         })} else{
             res.send({
             status:200,
-            data: req.params.id
+            data: movies[indx]
         })
     }
 })
@@ -145,6 +146,25 @@ app.get('/movies/update', (req,res)=>{
 
 app.get('/movies/delete', (req,res)=>{
     res.send('delete')
+})
+
+app.get('/movies/delete/:id', (req,res)=>{
+    let indx = parseInt(req.params.id);
+    const fnd = movies.find( i => movies.indexOf(i) === indx)
+    
+    if (!fnd) {
+        res.send({
+            status:404,
+            error:true,
+            message:`the movie ${indx} does not exist`
+        })
+    } else {
+        movies.splice(indx, 1)
+        res.send({
+            status:200,
+            data: movies,
+        })
+    }
 })
 
 app.listen(port, () => {
