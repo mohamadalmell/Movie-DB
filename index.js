@@ -144,6 +144,37 @@ app.get('/movies/update', (req,res)=>{
     res.send('update')
 })
 
+app.get('/movies/update/:id', (req,res)=>{
+    let indx = parseInt(req.params.id);
+    const fnd = movies.find( i => movies.indexOf(i) === indx)
+    let newTitle = req.query.title
+    let newYear = req.query.year
+    let newRating = req.query.rating
+
+    if (!fnd) {
+        res.send({
+            status:404,
+            error:true,
+            message:`the movie ${indx} does not exist`
+        })
+    } else {
+        if (newTitle !== undefined) {
+            movies[indx].title = newTitle 
+        } 
+        if (newYear !== undefined) {
+            movies[indx].year = newYear
+        }
+        if (newRating !== undefined) {
+            movies[indx].rating = newRating
+        }
+
+        res.send({
+            status:200,
+            data: movies,
+        })
+    } 
+})
+
 app.get('/movies/delete', (req,res)=>{
     res.send('delete')
 })
