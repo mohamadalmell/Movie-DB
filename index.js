@@ -1,7 +1,8 @@
 const express = require('express')
 const app = express()
 const port = 3000
-const router = express.Router()
+
+app.use(express.json())
 
 const movies = [
     { title: 'Jaws', year: 1975, rating: 8 },
@@ -58,10 +59,10 @@ app.get('/search', (req,res)=>{
     })
 })
 
-app.get('/movies/create', (req,res)=>{
-    let ttle = req.query.title;
-    let yr = req.query.year;
-    let rtg = req.query.rating;
+app.post('/movies', (req,res)=>{
+    let ttle = req.body.title;
+    let yr = req.body.year;
+    let rtg = req.body.rating;
 
     if (!ttle || !yr || isNaN(yr) || yr.length <4) {
         res.send({
@@ -78,56 +79,59 @@ app.get('/movies/create', (req,res)=>{
             status: 200,
             data: movies,
         })
+    }    
+})
+
+app.get('/movies', (req,res) =>{
+    let dte = req.query.bydate
+    let rtg = req.query.byrating
+    let ttle = req.query.bytitle
+
+    if (dte !== undefined) {
+        res.send({
+            status:200,
+            data: movies.sort((a,b)=>{
+                return b.year - a.year
+            })
+        })
     }
-})
 
-app.get('/movies/read', (req,res)=>{
-    res.send({
-        status:200,
-        data: movies,
-    })
-})
-
-app.get('/movies/read/by-date', (req,res)=>{
-    res.send({
-        status:200,
-        data: movies.sort((a,b)=>{
-            return b.year - a.year
+    if (rtg !== undefined) {
+        res.send({
+            status:200,
+            data: movies.sort((a,b)=>{
+                return b.rating - a.rating
+            })
         })
-    })
-})
+    }
 
-app.get('/movies/read/by-rating', (req,res)=>{
-    res.send({
-        status:200,
-        data: movies.sort((a,b)=>{
-            return b.rating - a.rating
+    if (ttle !== undefined) {
+        res.send({
+            status:200,
+            data: movies.sort((a, b) =>{
+                var nameA = a.title.toUpperCase();
+                var nameB = b.title.toUpperCase();
+                if (nameA < nameB) {
+                  return -1;
+                }
+                if (nameA > nameB) {
+                  return 1;
+                }
+                return 0;
+              })
         })
-    })
-})
+    }
 
-app.get('/movies/read/by-title', (req,res)=>{
     res.send({
-        status:200,
-        data: movies.sort((a, b) =>{
-            var nameA = a.title.toUpperCase();
-            var nameB = b.title.toUpperCase();
-            if (nameA < nameB) {
-              return -1;
-            }
-            if (nameA > nameB) {
-              return 1;
-            }
-            return 0;
-          })
+        status: 200,
+        data: movies
     })
-    
 })
 
-app.get('/movies/read/id/:id', (req,res)=>{
+app.get('/movies/:id', (req,res)=>{
     let indx = parseInt(req.params.id);
-    const find = movies.find( i => movies.indexOf(i) === indx)
-    if (!find) {
+    const movie = movies.find( i => movies.indexOf(i) === indx)
+    if (!movie) {
         res.send({
             status:404,
             error:true,
@@ -140,18 +144,11 @@ app.get('/movies/read/id/:id', (req,res)=>{
     }
 })
 
-app.get('/movies/update', (req,res)=>{
-    res.send('update')
-})
-
-app.get('/movies/update/:id', (req,res)=>{
+app.put('/movies/:id', (req,res) =>{
     let indx = parseInt(req.params.id);
-    const fnd = movies.find( i => movies.indexOf(i) === indx)
-    let newTitle = req.query.title
-    let newYear = req.query.year
-    let newRating = req.query.rating
+    const movie = movies.find( i => movies.indexOf(i) === indx)
 
-    if (!fnd) {
+    if (!movie) {
         res.send({
             status:404,
             error:true,
@@ -159,31 +156,27 @@ app.get('/movies/update/:id', (req,res)=>{
         })
     } else {
         if (newTitle !== undefined) {
-            movies[indx].title = newTitle 
+            movie.title = req.body.title 
         } 
         if (newYear !== undefined) {
-            movies[indx].year = newYear
+            movie.year = req.body.year
         }
         if (newRating !== undefined) {
-            movies[indx].rating = newRating
+            movie.rating = req.body.rating
         }
 
         res.send({
             status:200,
             data: movies,
         })
-    } 
+    }
 })
 
-app.get('/movies/delete', (req,res)=>{
-    res.send('delete')
-})
-
-app.get('/movies/delete/:id', (req,res)=>{
+app.delete('/movies/:id', (req,res)=>{
     let indx = parseInt(req.params.id);
-    const fnd = movies.find( i => movies.indexOf(i) === indx)
-    
-    if (!fnd) {
+    const movie = movies.find( i => movies.indexOf(i) === indx)
+
+    if (!movie) {
         res.send({
             status:404,
             error:true,
