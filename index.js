@@ -59,7 +59,26 @@ app.get('/search', (req,res)=>{
 })
 
 app.get('/movies/create', (req,res)=>{
-    res.send('create')
+    let ttle = req.query.title;
+    let yr = req.query.year;
+    let rtg = req.query.rating;
+
+    if (!ttle || !yr || isNaN(yr) || yr.length <4) {
+        res.send({
+            status: 403,
+            error: true,
+            message: 'You cannot create a movie without providing a title and a year',
+        })
+    }else {
+        if (!rtg) {
+            rtg = 4.0;
+        }
+        movies.push({title: ttle, year: yr, rating: rtg,})
+        res.send({
+            status: 200,
+            data: movies,
+        })
+    }
 })
 
 app.get('/movies/read', (req,res)=>{
