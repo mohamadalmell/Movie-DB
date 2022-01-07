@@ -1,15 +1,36 @@
 const express = require('express')
 const app = express()
 const port = 3000
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const url = 'mongodb+srv://mohamadalmell:mohamad1234@cluster0.agg9f.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
 
 app.use(express.json())
 
-const movies = [
-    { title: 'Jaws', year: 1975, rating: 8 },
-    { title: 'Avatar', year: 2009, rating: 7.8 },
-    { title: 'Brazil', year: 1985, rating: 8 },
-    { title: 'الإرهاب والكباب', year: 1992, rating: 6.2 }
-]
+
+mongoose.connect(url, {useNewUrlParser: true, useUnifiedTopology: true})
+const db = mongoose.connection
+db.on('error', console.error.bind(console, 'connection error: '))
+db.once('open', ()=>{
+    console.log('Connection succeeded');
+})
+
+const moviesSchema = new mongoose.Schema({
+    title : {type: String, required: true},
+    year : {type: Number, required: true},
+    rating : {type: Number, required: true, default: 4.0},
+}, {versionKey: false});
+
+const movies = mongoose.model("movies", moviesSchema);
+
+movies.create(
+    {title: 'Jaws', year: 1975, rating: 8},
+    {title: 'Avatar', year: 2009, rating: 7.8},
+    {title: 'Brazil', year: 1985, rating: 8},
+    {title: 'الإرهاب والكباب', year: 1992, rating: 6.2},
+    )
+.then()
+.catch(err => console.log(err))
 
 app.get('/', (req,res)=>{
     res.send('ok')
@@ -63,23 +84,25 @@ app.post('/movies', (req,res)=>{
     let ttle = req.body.title;
     let yr = req.body.year;
     let rtg = req.body.rating;
-
-    if (!ttle || !yr || isNaN(yr) || yr.length <4) {
-        res.send({
-            status: 403,
-            error: true,
-            message: 'You cannot create a movie without providing a title and a year',
+    
+    if (yr.length >= 4) {
+        movies.create({
+            title: ttle,
+            year: yr,
+            rating: rtg
+        }).then(()=>{
+            movies.find()
+            .then(item =>{
+                res.send({status: 200, data: item})
+            })
+            .catch(err =>{
+                console.log(err);
+            })
         })
-    }else {
-        if (!rtg) {
-            rtg = 4.0;
-        }
-        movies.push({title: ttle, year: yr, rating: rtg,})
-        res.send({
-            status: 200,
-            data: movies,
+        .catch(err =>{
+            console.log(err);
         })
-    }    
+    } else res.status(403).send({message: 'You cannot create a movie wihtou providing a valid year and a title'})
 })
 
 app.get('/movies', (req,res) =>{
@@ -88,107 +111,123 @@ app.get('/movies', (req,res) =>{
     let ttle = req.query.bytitle
 
     if (dte !== undefined) {
-        res.send({
-            status:200,
-            data: movies.sort((a,b)=>{
-                return b.year - a.year
+        movies.find()
+        .then(items =>{
+            res.send({
+                status:200,
+                data: items.sort((a,b)=>{
+                    return b.year - a.year
+                })
             })
+        })
+        .catch(err =>{
+            res.status(422).send(err);
         })
     }
 
     if (rtg !== undefined) {
-        res.send({
-            status:200,
-            data: movies.sort((a,b)=>{
-                return b.rating - a.rating
+        movies.find()
+        .then(items =>{
+            res.send({
+                status:200,
+                data: items.sort((a,b)=>{
+                    return b.rating - a.rating
+                })
             })
+        })
+        .catch(err =>{
+            res.status(422).send(err);
         })
     }
 
     if (ttle !== undefined) {
-        res.send({
-            status:200,
-            data: movies.sort((a, b) =>{
-                var nameA = a.title.toUpperCase();
-                var nameB = b.title.toUpperCase();
-                if (nameA < nameB) {
-                  return -1;
-                }
-                if (nameA > nameB) {
-                  return 1;
-                }
-                return 0;
-              })
+        movies.find()
+        .then(items =>{
+            res.send({
+                status:200,
+                data: items.sort((a, b) =>{
+                    var nameA = a.title.toUpperCase();
+                    var nameB = b.title.toUpperCase();
+                    if (nameA < nameB) {
+                      return -1;
+                    }
+                    if (nameA > nameB) {
+                      return 1;
+                    }
+                    return 0;
+                  })
+                })
+        })
+        .catch(err =>{
+            res.status(422).send(err);
         })
     }
 
-    res.send({
-        status: 200,
-        data: movies
+    movies.find()
+    .then(items =>{
+        res.send({
+            status: 200,
+            data: items
+        })
+    })
+    .catch(err=>{
+        console.log('Nothing found');
     })
 })
 
 app.get('/movies/:id', (req,res)=>{
-    let indx = parseInt(req.params.id);
-    const movie = movies.find( i => movies.indexOf(i) === indx)
-    if (!movie) {
+    movies.findById(req.params.id)
+    .then(items =>{
+        res.send({
+            status: 200,
+            data: items
+        })
+    })
+    .catch(err=>{
         res.send({
             status:404,
             error:true,
-            message:`the movie ${indx} does not exist`
-        })} else{
-            res.send({
-            status:200,
-            data: movies[indx]
+            message:`the movie ${req.params.id} does not exist`
         })
-    }
+    })
 })
 
 app.put('/movies/:id', (req,res) =>{
-    let indx = parseInt(req.params.id);
-    const movie = movies.find( i => movies.indexOf(i) === indx)
-
-    if (!movie) {
+    movies.findByIdAndUpdate(req.params.id, {
+        title: req.body.title,
+        year: req.body.year,
+        rating: req.body.rating
+    })
+    .then(items =>{
+        res.send({
+            status: 200,
+            data: items
+        })
+    })
+    .catch(err=>{
         res.send({
             status:404,
             error:true,
-            message:`the movie ${indx} does not exist`
+            message:`the movie ${req.params.id} does not exist`
         })
-    } else {
-        if (newTitle !== undefined) {
-            movie.title = req.body.title 
-        } 
-        if (newYear !== undefined) {
-            movie.year = req.body.year
-        }
-        if (newRating !== undefined) {
-            movie.rating = req.body.rating
-        }
-
-        res.send({
-            status:200,
-            data: movies,
-        })
-    }
+    })
 })
 
 app.delete('/movies/:id', (req,res)=>{
-    let indx = parseInt(req.params.id);
-    const movie = movies.find( i => movies.indexOf(i) === indx)
-
-    if (!movie) {
+    movies.findByIdAndDelete(req.params.id)
+    .then(items=>{
+        res.send({
+            status: 200,
+            data: items
+        })
+    })
+    .catch(err=>{
         res.send({
             status:404,
             error:true,
-            message:`the movie ${indx} does not exist`
+            message:`the movie ${indx} does not exist` 
         })
-    } else {
-        movies.splice(indx, 1)
-        res.send({
-            status:200,
-            data: movies,
-        })
-    }
+    })
 })
 
 app.listen(port, () => {
