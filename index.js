@@ -23,14 +23,14 @@ const moviesSchema = new mongoose.Schema({
 
 const movies = mongoose.model("movies", moviesSchema);
 
-movies.create(
-    {title: 'Jaws', year: 1975, rating: 8},
-    {title: 'Avatar', year: 2009, rating: 7.8},
-    {title: 'Brazil', year: 1985, rating: 8},
-    {title: 'الإرهاب والكباب', year: 1992, rating: 6.2},
-    )
-.then()
-.catch(err => console.log(err))
+// movies.create(
+//     {title: 'Jaws', year: 1975, rating: 8},
+//     {title: 'Avatar', year: 2009, rating: 7.8},
+//     {title: 'Brazil', year: 1985, rating: 8},
+//     {title: 'الإرهاب والكباب', year: 1992, rating: 6.2},
+//     )
+// .then()
+// .catch(err => console.log(err))
 
 app.get('/', (req,res)=>{
     res.send('ok')
@@ -228,6 +228,133 @@ app.delete('/movies/:id', (req,res)=>{
             message:`the movie ${indx} does not exist` 
         })
     })
+})
+
+// Step 13
+
+const users = [
+    {
+        username: "Mohamad",
+        password: "mohamad1234"
+    }
+]
+
+app.get('/users/read' , (req, res) => {
+    res.status(200).send({status:200, data: users.map(user => {
+        return user.username;
+    })})
+})
+
+app.post('/users/create' , (req, res) => {
+
+    if(!req.query.username){
+        if(!req.query.password){
+            res.status(403).send({status:403, error:true, message: 'you cannot create a new user without providing a username and password'})
+        }
+        else{
+            res.status(403).send({status:403, error:true, message: 'you cannot create a new user without providing a username'})
+        }
+    }
+
+    else if(!req.query.password) {
+        res.status(403).send({status:403, error:true, message: 'you cannot create a new user without providing a password'})
+    }
+
+    else if(users.map(user => user.username).includes(req.query.username)){
+        res.status(403).send({status:403, error:true, message: 'username is already exist'})
+    }
+
+    else {
+
+        let user = {
+            username: req.query.username,
+            password: req.query.password
+        }
+
+        users.push(user)
+
+        res.status(200).send({status:200, data: users.map(user => {
+            return user.username;
+        })})
+
+    }
+
+})
+
+app.delete(['/users/delete/:username/:password','/users/delete'], (req, res) => {
+
+
+    if(req.params.username && req.params.password){
+        let nbOfUsers = users.length
+        users.map(( user , index ) => {
+            if(user.username === req.params.username){
+                if(user.password === req.params.password){
+                    users.splice(index, 1)
+                    res.status(200).send({status:200, data: users.map(user => {
+                        return user.username;
+                    })})
+                }
+                else {
+                    res.status(404).send({status:404, error:true, message:`username and password are not matching`})
+                    nbOfUsers--
+                }
+
+            }
+        })
+        if(nbOfUsers === users.length){
+            res.status(404).send({status:404, error:true, message:`The user doesn't exist`})
+        }
+
+    }
+
+    else{
+        res.status(404).send({status:404, error:true, message:`Enter the username and the password of the user you want to delete`})
+    }
+
+})
+
+app.put(['/users/update','/users/update/:username','/users/update/:password', '/users/update/:username/:password'] , (req, res) => {
+
+    if(req.params.username && req.params.password){
+
+
+        if(!req.query.newusername && !req.query.newpassword){
+            res.status(404).send({status:404, error:true, message:`Enter the new data you want to update`})
+        }
+
+        else{
+
+            let newUser = {
+                username : `${req.query.newusername || req.params.username}`,
+                password : `${req.query.newpassword || req.params.password}`
+            }
+
+            let changed = false
+
+            users.map(( user , index ) => {
+                if(user.username === req.params.username){
+                    if(user.password === req.params.password){
+                        users.splice(index, 1, newUser)
+                        res.status(200).send({status:200, data: newUser})
+                        changed = true
+                    }
+                    else {
+                        res.status(404).send({status:404, error:true, message:`username and password are not matching`})
+                    }
+
+                }
+            })
+            if(!changed){
+                res.status(404).send({status:404, error:true, message:`couldn't find username`})
+            }
+
+        }
+    }
+
+    else{
+        res.status(404).send({status:404, error:true, message:`Enter the username and password of the user you want to update`})
+    }
+
 })
 
 app.listen(port, () => {
